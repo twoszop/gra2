@@ -1,0 +1,2 @@
+# gra2
+zdjecia
