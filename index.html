@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zagadka dnia</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    background: #0f172a; color: #fff;
+    font-family: -apple-system, system-ui, Segoe UI, Roboto, sans-serif;
+    display: flex; justify-content: center; padding: 16px;
+  }
+  .kontener { width: 100%; max-width: 440px; }
+  h1 { font-size: 26px; text-align: center; margin: 4px 0; }
+  .podtytul { text-align: center; color: #94a3b8; font-size: 14px; margin-bottom: 16px; }
+  #obraz {
+    aspect-ratio: 1/1; width: 100%; border-radius: 18px; margin-bottom: 18px;
+    background: linear-gradient(135deg,#1e293b,#334155);
+    border: 2px dashed #475569;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  #obraz img { width: 100%; height: 100%; object-fit: cover; }
+  .placeholder { text-align: center; color: #94a3b8; font-size: 14px; padding: 12px; }
+  .placeholder .ikona { font-size: 40px; margin-bottom: 8px; }
+  .pole { margin-bottom: 16px; position: relative; }
+  label { display: block; font-size: 14px; font-weight: 600; color: #cbd5e1; margin-bottom: 6px; }
+  input {
+    width: 100%; padding: 10px 12px; border-radius: 10px;
+    background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 15px;
+  }
+  input:focus { outline: none; border-color: #818cf8; }
+  input:disabled { opacity: 0.4; }
+  .wiersz-wiek { display: flex; gap: 8px; }
+  .wiersz-wiek input { flex: 1; }
+  button {
+    padding: 10px 16px; border-radius: 10px; border: none;
+    background: #4f46e5; color: #fff; font-weight: 600; font-size: 15px; cursor: pointer;
+  }
+  button:hover { background: #6366f1; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  .sugestie {
+    position: absolute; z-index: 10; width: 100%; margin-top: 4px;
+    background: #1e293b; border: 1px solid #475569; border-radius: 10px; overflow: hidden;
+  }
+  .sugestie button {
+    display: block; width: 100%; text-align: left; background: none;
+    border-radius: 0; padding: 10px 12px; color: #fff; font-weight: 400;
+  }
+  .sugestie button:hover { background: #4f46e5; }
+  .feedback { margin-top: 8px; }
+  .fb { font-size: 14px; padding: 5px 12px; border-radius: 6px; margin-top: 4px; }
+  .fb.ok { background: rgba(22,101,52,.55); color: #86efac; }
+  .fb.zle { background: rgba(127,29,29,.5); color: #fca5a5; }
+  #wygrana {
+    background: rgba(22,101,52,.35); border: 1px solid #16a34a;
+    border-radius: 18px; padding: 24px; text-align: center;
+  }
+  #wygrana .duze { font-size: 26px; margin-bottom: 8px; }
+  #wygrana p { margin: 4px 0; color: #cbd5e1; }
+  .seria { color: #fcd34d !important; font-size: 18px; }
+  .panel { margin-top: 32px; padding-top: 16px; border-top: 1px solid #334155; }
+  .panel .info { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+  .panel-przyciski { display: flex; gap: 8px; flex-wrap: wrap; }
+  .panel button { flex: 1; background: #334155; font-size: 13px; padding: 8px 10px; }
+  .panel button:hover { background: #475569; }
+  .panel .nr { font-size: 12px; color: #475569; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="kontener">
+  <h1>Zagadka dnia 🕵️</h1>
+  <div class="podtytul">Odgadnij imię, wiek i miejscowość</div>
+
+  <div id="obraz"></div>
+
+  <div id="strefaGry"></div>
+  <div id="wygrana" style="display:none"></div>
+
+  <div class="panel">
+    <div class="info">🔧 Panel testowy (w gotowej grze do usunięcia):</div>
+    <div class="panel-przyciski">
+      <button onclick="nastepna()">Następna zagadka →</button>
+      <button onclick="resetuj()">Reset prób</button>
+      <button onclick="wyczyscZapis()">Wyczyść zapis (streak/blokadę)</button>
+    </div>
+    <div class="nr" id="numerZagadki"></div>
+  </div>
+</div>
+
+<script>
+// ===================================================================
+//  ⬇⬇⬇  EDYTUJ TUTAJ  —  Twoja baza osób (docelowo 370 wpisów)  ⬇⬇⬇
+// ===================================================================
+const DANE = [
+  { img: "https://raw.githubusercontent.com/twoszop/gra2/main/grzegorz36katowice.jpg", imie: "Grzegorz", wiek: 36, miejscowosc: "Katowice" },
+  { img: "https://raw.githubusercontent.com/twoszop/gra2/main/dominik22bogusławice.jpg", imie: "Dominik",        wiek: 22, miejscowosc: "Bogusławice"  },
+  { img: "https://raw.githubusercontent.com/twoszop/gra2/main/adam23nur.jpg", imie: "Adam",   wiek: 23, miejscowosc: "Nur" },
+  { img: "https://raw.githubusercontent.com/twoszop/gra2/main/krzysztof51zewłągi.jpg", imie: "Krzysztof", wiek: 51, miejscowosc: "Zewłągi"  },
+  { img: "https://raw.githubusercontent.com/twoszop/gra2/main/konrad31chodel.jpg", imie: "Konrad", wiek: 31, miejscowosc: "Chodel"  },
+  { img: "https://raw.githubusercontent.com/twoszop/gra2/main/krzysztof35witków.jpg", imie: "Krzysztof", wiek: 35, miejscowosc: "Witków"  },
+  { img: "https://raw.githubusercontent.com/twoszop/gra2/main/krzysztof44warszawa.jpg", imie: "Krzysztof", wiek: 44, miejscowosc: "Warszawa"  },
+  { img: "https://raw.githubusercontent.com/twoszop/gra2/main/marcin35koło.jpg", imie: "Marcin", wiek: 35, miejscowosc: "Koło"  },
+  { img: "https://raw.githubusercontent.com/twoszop/gra2/main/marcin38szydłowo.jpg", imie: "Marcin", wiek: 38, miejscowosc: "Szydłowo"  },
+  { img: "https://raw.githubusercontent.com/twoszop/gra2/main/łukasz37chwałowice.jpg", imie: "Łukasz", wiek: 37, miejscowosc: "Chwałowice"  },
+  { img: "https://raw.githubusercontent.com/twoszop/gra2/main/mirek28osielsko.jpg", imie: "Mirek", wiek: 28, miejscowosc: "Osielsko"  },
+  { img: "https://raw.githubusercontent.com/twoszop/gra2/main/mariusz28osielsko.jpg", imie: "Mariusz", wiek: 28, miejscowosc: "Osielsko"  },
+
+];
+
+// Data startu gry (rok, miesiąc OD ZERA: 5 = czerwiec, dzień)
+const DATA_STARTU = new Date(2026, 5, 11);
+// ===================================================================
+//  ⬇  Poniżej silnik gry — nie musisz tego ruszać.  ⬇
+// ===================================================================
+
+let offset = 0;
+let probyImie = [], probyMiejsc = [], probyWiek = [];
+
+const wszystkieImiona = [...new Set(DANE.map(d => d.imie))].sort();
+const wszystkieMiejsca = [...new Set(DANE.map(d => d.miejscowosc))].sort();
+
+// --- zapis postępu w przeglądarce gracza (streak + blokada dnia) ---
+const KLUCZ = "zagadka_zapis_v1";
+function wczytaj() { try { return JSON.parse(localStorage.getItem(KLUCZ) || "{}"); } catch(e) { return {}; } }
+function zapisz(o) { try { localStorage.setItem(KLUCZ, JSON.stringify(o)); } catch(e) {} }
+
+function ileDniOd(s) {
+  const t = new Date();
+  const a = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
+  const b = Date.UTC(s.getFullYear(), s.getMonth(), s.getDate());
+  return Math.floor((a - b) / 86400000);
+}
+function dzienKey() { return ileDniOd(DATA_STARTU) + offset; }   // numer dnia (do blokady/serii)
+function indeks() {
+  return ((dzienKey()) % DANE.length + DANE.length) % DANE.length;
+}
+function cel() { return DANE[indeks()]; }
+
+function bezPolskich(t) {
+  return t.toLowerCase()
+    .replace(/ą/g,"a").replace(/ć/g,"c").replace(/ę/g,"e").replace(/ł/g,"l")
+    .replace(/ń/g,"n").replace(/ó/g,"o").replace(/ś/g,"s").replace(/ż|ź/g,"z");
+}
+
+function rysujObraz() {
+  const o = document.getElementById("obraz");
+  const c = cel();
+  if (c.img) {
+    o.innerHTML = '<img src="' + c.img + '" alt="zagadka" ' +
+      'onerror="this.parentNode.innerHTML=\'<div class=&quot;placeholder&quot;><div class=&quot;ikona&quot;>🖼️</div>Tu pojawi się zdjęcie po otwarciu na stronie</div>\'">';
+  } else {
+    o.innerHTML = '<div class="placeholder"><div class="ikona">🖼️</div>tu trafi zdjęcie #' + (indeks()+1) + '</div>';
+  }
+}
+
+function rysujGre() {
+  const c = cel();
+  const okImie = probyImie.includes(c.imie);
+  const okMiejsc = probyMiejsc.includes(c.miejscowosc);
+  const okWiek = probyWiek.includes(c.wiek);
+
+  let html = "";
+  // IMIĘ
+  html += '<div class="pole"><label>Imię i nazwisko</label>';
+  html += '<input id="inpImie" placeholder="' + (okImie ? "✓ odgadnięte" : "zacznij pisać...") + '"' +
+          (okImie ? " disabled" : "") + ' oninput="podpowiedzImie(this.value)" autocomplete="off">';
+  html += '<div class="sugestie" id="sugImie" style="display:none"></div>';
+  html += '<div class="feedback">' + probyImie.map(p =>
+            '<div class="fb ' + (p===c.imie?"ok":"zle") + '">' + (p===c.imie?"✓ ":"✗ ") + p + '</div>').join("") + '</div></div>';
+  // WIEK
+  html += '<div class="pole"><label>Wiek</label>';
+  html += '<input id="inpWiek" type="number" placeholder="' + (okWiek ? "✓ odgadnięte" : "wpisz liczbę i naciśnij Enter") + '"' +
+          (okWiek ? " disabled" : "") + ' onkeydown="if(event.key===\'Enter\')zgadnijWiek()">';
+  html += '<div class="feedback">' + probyWiek.map(p => {
+            const ok = p===c.wiek;
+            const strz = ok ? "" : (p < c.wiek ? " ↑ (więcej)" : " ↓ (mniej)");
+            return '<div class="fb ' + (ok?"ok":"zle") + '">' + (ok?"✓ ":"✗ ") + p + strz + '</div>';
+          }).join("") + '</div></div>';
+  // MIEJSCOWOŚĆ
+  html += '<div class="pole"><label>Miejscowość</label>';
+  html += '<input id="inpMiejsc" placeholder="' + (okMiejsc ? "✓ odgadnięte" : "zacznij pisać...") + '"' +
+          (okMiejsc ? " disabled" : "") + ' oninput="podpowiedzMiejsc(this.value)" autocomplete="off">';
+  html += '<div class="sugestie" id="sugMiejsc" style="display:none"></div>';
+  html += '<div class="feedback">' + probyMiejsc.map(p =>
+            '<div class="fb ' + (p===c.miejscowosc?"ok":"zle") + '">' + (p===c.miejscowosc?"✓ ":"✗ ") + p + '</div>').join("") + '</div></div>';
+
+  document.getElementById("strefaGry").innerHTML = html;
+
+  if (okImie && okMiejsc && okWiek) rozwiazano();
+}
+
+function podpowiedzImie(v)  { pokazSugestie(v, wszystkieImiona, "sugImie", "wybierzImie"); }
+function podpowiedzMiejsc(v){ pokazSugestie(v, wszystkieMiejsca, "sugMiejsc", "wybierzMiejsc"); }
+function pokazSugestie(v, pula, idDiv, funkcja) {
+  const div = document.getElementById(idDiv);
+  if (!v.trim()) { div.style.display = "none"; return; }
+  const t = bezPolskich(v);
+  const pas = pula.filter(o => bezPolskich(o).includes(t)).slice(0, 6);
+  if (pas.length === 0) { div.style.display = "none"; return; }
+  div.innerHTML = pas.map(o => '<button onclick="' + funkcja + '(\'' + o.replace(/'/g,"\\'") + '\')">' + o + '</button>').join("");
+  div.style.display = "block";
+}
+function wybierzImie(v)  { if (!probyImie.includes(v)) probyImie.push(v); rysujGre(); }
+function wybierzMiejsc(v){ if (!probyMiejsc.includes(v)) probyMiejsc.push(v); rysujGre(); }
+function zgadnijWiek() {
+  const n = parseInt(document.getElementById("inpWiek").value, 10);
+  if (isNaN(n) || probyWiek.includes(n)) return;
+  probyWiek.push(n); rysujGre();
+}
+
+// --- rozwiązanie zagadki: licz streak, zapisz, pokaż wynik ---
+function rozwiazano() {
+  const c = cel();
+  const proby = probyImie.length + probyMiejsc.length + probyWiek.length;
+  const dk = dzienKey();
+  const zapis = wczytaj();
+  let streak;
+  if (zapis.lastSolvedDay === dk)        streak = zapis.streak || 1;       // już dziś rozwiązane
+  else if (zapis.lastSolvedDay === dk-1) streak = (zapis.streak || 0) + 1; // dzień po dniu
+  else                                   streak = 1;                       // przerwa → od nowa
+  zapis.lastSolvedDay = dk;
+  zapis.streak = streak;
+  zapis.results = zapis.results || {};
+  zapis.results[dk] = { proby: proby, imie: c.imie, wiek: c.wiek, miejsc: c.miejscowosc };
+  zapisz(zapis);
+  pokazWynik(zapis.results[dk], streak, true);
+}
+
+function pokazWynik(w, streak, swiezy) {
+  document.getElementById("strefaGry").style.display = "none";
+  const el = document.getElementById("wygrana");
+  el.style.display = "block";
+  el.innerHTML =
+    '<div class="duze">' + (swiezy ? '🎉 Brawo!' : '✓ Dzisiejsza zagadka rozwiązana') + '</div>' +
+    '<p>To była: <b>' + w.imie + '</b>, ' + w.wiek + ' lat, ' + w.miejsc + '</p>' +
+    '<p>Liczba prób: <b>' + w.proby + '</b></p>' +
+    '<p class="seria">🔥 Seria: ' + streak + '</p>' +
+    '<p style="margin-top:12px;color:#94a3b8">Wróć jutro po nową zagadkę 🌙</p>';
+}
+
+// --- start / przeładowanie widoku ---
+function nowaZagadka() {
+  probyImie = []; probyMiejsc = []; probyWiek = [];
+  rysujObraz();
+  const zapis = wczytaj();
+  const wynikDnia = (zapis.results || {})[dzienKey()];
+  if (wynikDnia) {                       // już rozwiązane → blokada, pokaż wynik
+    pokazWynik(wynikDnia, zapis.streak || 0, false);
+  } else {                               // jeszcze nie → graj
+    document.getElementById("wygrana").style.display = "none";
+    document.getElementById("strefaGry").style.display = "block";
+    rysujGre();
+  }
+  document.getElementById("numerZagadki").textContent =
+    "Pokazuję zagadkę #" + (indeks()+1) + " z " + DANE.length + "  (dzień " + dzienKey() + ")";
+}
+function nastepna()    { offset += 1; nowaZagadka(); }
+function resetuj()     { nowaZagadka(); }
+function wyczyscZapis(){ try { localStorage.removeItem(KLUCZ); } catch(e) {} offset = 0; nowaZagadka(); }
+
+nowaZagadka();
+</script>
+</body>
+</html>
