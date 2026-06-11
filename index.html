@@ -163,7 +163,7 @@ function rysujGre() {
 
   let html = "";
   // IMIĘ
-  html += '<div class="pole"><label>Imię i nazwisko</label>';
+  html += '<div class="pole"><label>Imię</label>';
   html += '<input id="inpImie" placeholder="' + (okImie ? "✓ odgadnięte" : "zacznij pisać...") + '"' +
           (okImie ? " disabled" : "") + ' oninput="podpowiedzImie(this.value)" autocomplete="off">';
   html += '<div class="sugestie" id="sugImie" style="display:none"></div>';
